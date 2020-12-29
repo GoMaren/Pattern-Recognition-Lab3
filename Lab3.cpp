@@ -18,11 +18,129 @@ int qFunc(int c1, const int epsilon, int c2)
 	return -diff;
 }
 
+int** run(const int height, const int width, const int modKs, int Ks[], int*** q, double** g, const int loops)
+{
+	// Initialize phi, L, R, U, D
+	int modT = height * width;
+	double** phi = new double* [modT];
+	double** L = new double* [modT];
+	double** R = new double* [modT];
+	double** U = new double* [modT];
+	double** D = new double* [modT];
+	for (int ij = 0; ij < modT; ++ij)
+	{
+		phi[ij] = new double[modKs]();
+		L[ij] = new double[modKs]();
+		R[ij] = new double[modKs]();
+		U[ij] = new double[modKs]();
+		D[ij] = new double[modKs]();
+	}
+
+	for (int i = height - 2; i >= 0; --i)
+	{
+		const int i_ = i * width;
+		for (int j = width - 2; j >= 0; --j)
+		{
+			const int ij = i_ + j;
+			for (int k = 0; k < modKs; ++k)
+			{
+				double maxR = -10000000.;
+				for (int k_ = 0; k_ < modKs; ++k_)
+				{
+					const double R_ = R[ij + 1][k_] + 0.5 * q[i][j + 1][k_] + g[k_][k];
+					if (R_ > maxR)
+						maxR = R_;
+				}
+				R[i_ + j][k] = maxR;
+
+				double maxD = -10000000.;
+				for (int k_ = 0; k_ < modKs; ++k_)
+				{
+					const double D_ = D[ij + width][k_] + 0.5 * q[i + 1][j][k_] + g[k_][k];
+					if (D_ > maxD)
+						maxD = D_;
+				}
+				D[i_ + j][k] = maxD;
+			}
+		}
+	}
+
+	auto start = high_resolution_clock::now();
+	// Main loop
+	for (int iter = 0; iter < loops; ++iter)
+	{
+		// Forward
+		for (int i = 1; i < height; ++i)
+		{
+			const int i_ = i * width;
+			for (int j = 1; j < width; ++j)
+			{
+				const int ij = i_ + j;
+				for (int k = 0; k < modKs; ++k)
+				{
+					double maxL = -10000000.;
+					for (int k_ = 0; k_ < modKs; ++k_)
+					{
+						const double L_ = L[ij - 1][k_] + 0.5 * q[i][j - 1][k_] + g[k_][k] - phi[ij - 1][k_];
+						if (L_ > maxL)
+							maxL = L_;
+					}
+					L[ij][k] = maxL;
+
+					double maxU = -10000000.;
+					for (int k_ = 0; k_ < modKs; ++k_)
+					{
+						const double U_ = U[ij - width][k_] + 0.5 * q[i - 1][j][k_] + g[k_][k] + phi[ij - width][k_];
+						if (U_ > maxU)
+							maxU = U_;
+					}
+					U[ij][k] = maxU;
+
+					phi[ij][k] = (L[ij][k] + R[ij][k] - U[ij][k] - D[ij][k]) * 0.5;
+				}
+			}
+		}
+		// Backward
+		for (int i = height - 2; i >= 0; --i)
+		{
+			const int i_ = i * width;
+			for (int j = width - 2; j >= 0; --j)
+			{
+				const int ij = i_ + j;
+				for (int k = 0; k < modKs; ++k)
+				{
+					double maxR = -10000000.;
+					for (int k_ = 0; k_ < modKs; ++k_)
+					{
+						const double R_ = R[ij + 1][k_] + 0.5 * q[i][j + 1][k_] + g[k_][k] - phi[ij + 1][k_];
+						if (R_ > maxR)
+							maxR = R_;
+					}
+					R[ij][k] = maxR;
+
+					double maxD = -10000000.;
+					for (int k_ = 0; k_ < modKs; ++k_)
+					{
+						const double D_ = D[ij + width][k_] + 0.5 * q[i + 1][j][k_] + g[k_][k] + phi[ij + width][k_];
+						if (D_ > maxD)
+							maxD = D_;
+					}
+					D[ij][k] = maxD;
+
+					phi[ij][k] = (L[ij][k] + R[ij][k] - U[ij][k] - D[ij][k]) * 0.5;
+				}
+			}
+		}
+	}
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	cout << "Time used for " << loops << " iterations : " << double(duration.count()) / 1000000. << endl;
+
+	return res;
+}
+
 int main()
 {
-	// Test
-	test();
-
 	Mat image_, image;
 	image_ = imread("1.png", IMREAD_UNCHANGED);
 	namedWindow("Original image", WINDOW_AUTOSIZE);
