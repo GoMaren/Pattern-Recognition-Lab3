@@ -2,8 +2,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
-#include <vector>
-#include <chrono> 
 #include <cmath>
 #include <cassert>
 
@@ -65,7 +63,6 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 		}
 	}
 
-	auto start = high_resolution_clock::now();
 	// Main loop
 	for (int iter = 0; iter < loops; ++iter)
 	{
@@ -132,9 +129,6 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 			}
 		}
 	}
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<microseconds>(stop - start);
-	cout << "Time used for " << loops << " iterations : " << double(duration.count()) / 1000000. << endl;
 
 	// Best Ks
 	int** res = new int* [height];
