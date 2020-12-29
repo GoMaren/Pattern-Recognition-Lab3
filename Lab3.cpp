@@ -167,8 +167,62 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 	return res;
 }
 
+void test()
+{
+	const int size = 2;
+	// Get array from Mat
+	int** testcolors = new int* [size];
+	for (int i = 0; i < size; ++i)
+	{
+		testcolors[i] = new int[size];
+		for (int j = 0; j < size; ++j)
+		{
+			testcolors[i][j] = 255 * abs(i - j) / (size - 1);
+		}
+	}
+
+	// Target colors
+	const int epsilon = 0;
+	const int modKs = 2;
+	int Ks[modKs] = { 0, 255 };
+
+	// G
+	double** g = new double* [modKs];
+	for (int k = 0; k < modKs; ++k)
+		g[k] = new double[modKs]();
+
+	for (int k = 0; k < modKs; ++k)
+		for (int k_ = 0; k_ < modKs; ++k_)
+			g[k][k_] = -abs(Ks[k] - Ks[k_]);
+
+	// Q
+	int*** q = new int** [size];
+	for (int i = 0; i < size; ++i)
+	{
+		q[i] = new int* [size];
+		for (int j = 0; j < size; ++j)
+		{
+			q[i][j] = new int[3];
+			for (int k = 0; k < modKs; ++k)
+				q[i][j][k] = qFunc(testcolors[i][j], epsilon, Ks[k]);
+		}
+	}
+
+	int** res = run(size, size, modKs, Ks, q, g, 1);
+
+	assert(res[0][0] == 255);
+	assert(res[1][0] == 255);
+	assert(res[0][1] == 255);
+	assert(res[1][1] == 255);
+
+	cout << "Test passed!" << endl;
+}
+
 int main()
 {
+	// Test
+	test();
+
 	Mat image_, image;
 	image_ = imread("1.png", IMREAD_UNCHANGED);
 	namedWindow("Original image", WINDOW_AUTOSIZE);
