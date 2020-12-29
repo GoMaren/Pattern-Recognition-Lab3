@@ -136,6 +136,34 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 	auto duration = duration_cast<microseconds>(stop - start);
 	cout << "Time used for " << loops << " iterations : " << double(duration.count()) / 1000000. << endl;
 
+	// Best Ks
+	int** res = new int* [height];
+	for (int i = 0; i < height; ++i)
+	{
+		res[i] = new int[width]();
+	}
+
+	for (int i = 0; i < height; ++i)
+	{
+		const int i_ = i * width;
+		for (int j = 0; j < width; ++j)
+		{
+			const int ij = i_ + j;
+			int k_star = 0;
+			double value = -10000000.;
+			for (int k_ = 0; k_ < modKs; ++k_)
+			{
+				const double v_ = L[ij][k_] + R[ij][k_] + 0.5 * q[i][j][k_] - phi[ij][k_];
+				if (v_ > value)
+				{
+					value = v_;
+					k_star = k_;
+				}
+			}
+			res[i][j] = Ks[k_star];
+		}
+	}
+
 	return res;
 }
 
@@ -188,6 +216,18 @@ int main()
 				q[i][j][k] = qFunc(colors[i][j], epsilon, Ks[k]);
 		}
 	}
+
+	const int loops = 10;
+	int** res = run(height, width, modKs, Ks, q, g, loops);
+
+	Mat result = Mat::zeros(Size(width, height), CV_8UC1);
+	for (int i = 0; i < height; ++i)
+		for (int j = 0; j < width; ++j)
+			result.at<uchar>(i, j) = uchar(res[i][j]);
+
+	namedWindow("Result image", WINDOW_AUTOSIZE);
+	imshow("Result image", result);
+	imwrite("res1.png", result);
 
 	waitKey(0);
 	return 0;
