@@ -2,11 +2,14 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
+#include <vector>
+#include <chrono> 
 #include <cmath>
 #include <cassert>
 
 using namespace cv;
 using namespace std;
+using namespace std::chrono;
 
 int qFunc(int c1, const int epsilon, int c2)
 {
@@ -62,6 +65,7 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 		}
 	}
 
+	auto start = high_resolution_clock::now();
 	// Main loop
 	for (int iter = 0; iter < loops; ++iter)
 	{
@@ -128,6 +132,9 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 			}
 		}
 	}
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	cout << "Time used for " << loops << " iterations : " << double(duration.count()) / 1000000. << endl;
 
 	// Best Ks
 	int** res = new int* [height];
@@ -156,6 +163,20 @@ int** run(const int height, const int width, const int modKs, int Ks[], int*** q
 			res[i][j] = Ks[k_star];
 		}
 	}
+
+	for (int ij = 0; ij < modT; ++ij)
+	{
+		delete[] phi[ij];
+		delete[] L[ij];
+		delete[] R[ij];
+		delete[] U[ij];
+		delete[] D[ij];
+	}
+	delete[] phi;
+	delete[] L;
+	delete[] R;
+	delete[] U;
+	delete[] D;
 
 	return res;
 }
@@ -209,6 +230,22 @@ void test()
 	assert(res[1][1] == 255);
 
 	cout << "Test passed!" << endl;
+
+	for (int i = 0; i < size; ++i)
+		delete[] testcolors[i];
+	delete[] testcolors;
+
+	for (int i = 0; i < size; ++i)
+	{
+		for (int j = 0; j < size; ++j)
+			delete[] q[i][j];
+		delete[] q[i];
+	}
+	delete[] q;
+
+	for (int k = 0; k < modKs; ++k)
+		delete[] g[k];
+	delete[] g;
 }
 
 int main()
@@ -258,7 +295,7 @@ int main()
 		q[i] = new int* [width];
 		for (int j = 0; j < width; ++j)
 		{
-			q[i][j] = new int[3];
+			q[i][j] = new int[modKs];
 			for (int k = 0; k < modKs; ++k)
 				q[i][j][k] = qFunc(colors[i][j], epsilon, Ks[k]);
 		}
