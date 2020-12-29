@@ -7,7 +7,6 @@
 
 using namespace cv;
 using namespace std;
-using namespace std::chrono;
 
 int qFunc(int c1, const int epsilon, int c2)
 {
